@@ -6,8 +6,8 @@
   },
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "start:dev": "npm run watch & nodemon server.js",
+    "start": "http-server -p 3000 .",
+    "start:dev": "npm run watch & http-server -p 3000 .",
     "watch": "watchify js/main.js -o js/app.js -v",
     "build": "browserify js/main.js -o js/app.js"
   },
@@ -27,10 +27,12 @@
     "gifshot": "^0.3.2",
     "hat": "0.0.3",
     "socket.io": "^1.4.8",
-    "socket.io-client": "^1.4.8"
+    "socket.io-client": "^1.4.8",
+    "yo-yo": "^1.2.2"
   },
   "devDependencies": {
     "browserify": "^13.1.0",
+    "http-server": "^0.9.0",
     "nodemon": "^1.10.0",
     "watchify": "^3.7.0"
   }

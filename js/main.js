@@ -1,5 +1,6 @@
 var gifshot = require('gifshot');
 var firebase = require('firebase');
+var yo = require('yo-yo');
 
 firebase.initializeApp({
   apiKey: "AIzaSyD2Fj1_eWLFd0c3aiCUIHsSH0m63mUjufY",
@@ -15,7 +16,6 @@ firebase.auth().signInAnonymously().catch(function(error) {
 firebase.auth().onAuthStateChanged(function(user) {
   if (user) {
     userID = user.uid;
-    console.log(userID);
   }
 });
 
@@ -23,43 +23,39 @@ firebase.auth().onAuthStateChanged(function(user) {
 var userID = null;
 var userRef = null;
 
-var container = document.getElementById('users');
-var userContainer = document.createElement('div');
-var animatedImage = document.createElement('img')
-userContainer.setAttribute('id', userID);
-container.appendChild(userContainer);
+var users = [];
+var container = listUsers(users);
 
-var saveGif = function() {
+function listUsers(users) {
+  return yo`<ul>
+    ${users.map(function (user) {
+      return yo`<li><img src="${user}" /></li>`
+    })}
+  </ul>`
+}
+
+function saveGif() {
   if (!userID) return;
   userRef = firebase.database().ref('gifs/' + userID);
   userRef.onDisconnect().remove();
   gifshot.createGIF({}, function(obj) {
     if(!obj.error) {
-      var image = obj.image;
       userRef.set({
-        image: image
+        image: obj.image
       });
-      animatedImage.src = image;
     }
   });
-  return animatedImage.src;
 }
+
+firebase.database().ref('gifs').on('value', function(data) {
+  var data = data.val();
+  users = [];
+  for (var key in data) {
+    users.push(data[key].image);
+  }
+  yo.update(container, listUsers(users));
+});
 
 setInterval(saveGif, 3000);
 
-firebase.database().ref('gifs').on('child_changed', function(data) {
-  var userEl = document.getElementById(userID);
-  var userImg = document.createElement('img');
-  userImg.src = data.val().image;
-
-  // if the element doesn't exist, create it
-  if (!userID && typeof(userEl) === 'undefined' || userEl === null) {
-    userEl = document.createElement('div');
-    userEl.setAttribute('id', userID);
-    container.appendChild(userEl);
-  } else {
-    userEl.innerHTML = '';
-  }
-
-  userEl.appendChild(userImg);
-});
+document.body.appendChild(container);
