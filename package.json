@@ -8,8 +8,8 @@
   "scripts": {
     "start": "node server.js",
     "start:dev": "npm run watch & nodemon server.js",
-    "watch": "watchify src/js/main.js -o public/js/app.js -v",
-    "build": "browserify src/js/main.js -o public/js/app.js"
+    "watch": "watchify js/main.js -o js/app.js -v",
+    "build": "browserify js/main.js -o js/app.js"
   },
   "repository": {
     "type": "git",
@@ -23,6 +23,7 @@
   "homepage": "https://github.com/ascott1/gifteam#readme",
   "dependencies": {
     "express": "^4.14.0",
+    "firebase": "^3.2.1",
     "gifshot": "^0.3.2",
     "hat": "0.0.3",
     "socket.io": "^1.4.8",
