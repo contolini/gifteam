@@ -1,6 +1,33 @@
 var gifshot = require('gifshot');
 var firebase = require('firebase');
-var yo = require('yo-yo');
+
+// I'm lazy.
+var userID = null;
+var userRef = null;
+
+var users = document.getElementById('users');
+
+function saveGif() {
+  gifshot.createGIF({}, function(obj) {
+    if (!obj.error) {
+      userRef.set({
+        id: userID,
+        image: obj.image
+      });
+    }
+  });
+}
+
+function addUser(id, image) {
+  return `<li id="${id}" class="user"><img src="${image}" alt="User ${id}" /></li>`;
+}
+
+function init(user) {
+  userID = user.uid;
+  userRef = firebase.database().ref('gifs/' + userID);
+  userRef.onDisconnect().remove();
+  setInterval(saveGif, 3000);
+}
 
 firebase.initializeApp({
   apiKey: "AIzaSyD2Fj1_eWLFd0c3aiCUIHsSH0m63mUjufY",
@@ -14,48 +41,19 @@ firebase.auth().signInAnonymously().catch(function(error) {
 });
 
 firebase.auth().onAuthStateChanged(function(user) {
-  if (user) {
-    userID = user.uid;
-  }
+  if (user) init(user);
 });
-
-// I'm lazy.
-var userID = null;
-var userRef = null;
-
-var users = [];
-var container = listUsers(users);
-
-function listUsers(users) {
-  return yo`<ul>
-    ${users.map(function (user) {
-      return yo`<li><img src="${user}" /></li>`
-    })}
-  </ul>`
-}
-
-function saveGif() {
-  if (!userID) return;
-  userRef = firebase.database().ref('gifs/' + userID);
-  userRef.onDisconnect().remove();
-  gifshot.createGIF({}, function(obj) {
-    if(!obj.error) {
-      userRef.set({
-        image: obj.image
-      });
-    }
-  });
-}
 
 firebase.database().ref('gifs').on('value', function(data) {
   var data = data.val();
-  users = [];
+  var user;
   for (var key in data) {
-    users.push(data[key].image);
+    user = document.getElementById(key);
+    if (!user) users.innerHTML += addUser(key, data[key].image);
   }
-  yo.update(container, listUsers(users));
 });
 
-setInterval(saveGif, 3000);
-
-document.body.appendChild(container);
+firebase.database().ref('gifs').on('child_changed', function(data) {
+  var data = data.val();
+  document.querySelector(`#${data.id} img`).src = data.image;
+});

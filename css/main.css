@@ -1,0 +1,14 @@
+#users {
+  list-style-type: none;
+  padding: 0;
+  display: table;
+  width: 100%;
+}
+
+.user {
+  display: table-cell;
+}
+
+.user img {
+  width: 100%;
+}
