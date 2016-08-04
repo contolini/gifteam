@@ -1,27 +1,22 @@
 var gifshot = require('gifshot');
 var firebase = require('firebase');
+var work = require('webworkify');
 
 // I'm lazy.
 var userID = null;
 var userRef = null;
 var cameraStream = null;
 
-var users = document.getElementById('users');
-
-function saveGif() {
-  gifshot.createGIF({
-    keepCameraOn: true,
-    cameraStream: cameraStream
-  }, function(obj) {
-    if (!obj.error) {
-      userRef.set({
-        id: userID,
-        image: obj.image
-      });
-    }
-    cameraStream = obj.cameraStream;
+// Work it.
+var worker = work(require('./gif.js'));
+worker.addEventListener('message', function(ev) {
+  userRef.set({
+    id: userID,
+    image: ev.data
   });
-}
+}, false);
+
+var users = document.getElementById('users');
 
 function addUser(id, image) {
   return `<li id="user${id}" class="user"><img src="${image}" alt="User ${id}" /></li>`;
@@ -31,8 +26,6 @@ function init(user) {
   userID = user.uid;
   userRef = firebase.database().ref('gifs/' + userID);
   userRef.onDisconnect().remove();
-  setInterval(saveGif, 3000);
-  saveGif();
 }
 
 firebase.initializeApp({

@@ -1,13 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var gifshot = require('gifshot');
-var firebase = require('firebase');
-
-// I'm lazy.
-var userID = null;
-var userRef = null;
-var cameraStream = null;
-
-var users = document.getElementById('users');
+var cameraStream;
 
 function saveGif() {
   gifshot.createGIF({
@@ -15,14 +8,37 @@ function saveGif() {
     cameraStream: cameraStream
   }, function(obj) {
     if (!obj.error) {
-      userRef.set({
-        id: userID,
-        image: obj.image
-      });
+      self.postMessage([obj.image]);
     }
     cameraStream = obj.cameraStream;
   });
 }
+
+module.exports = function (self) {
+  saveGif();
+  setInterval(saveGif, 3000);
+};
+
+},{"gifshot":5}],2:[function(require,module,exports){
+var gifshot = require('gifshot');
+var firebase = require('firebase');
+var work = require('webworkify');
+
+// I'm lazy.
+var userID = null;
+var userRef = null;
+var cameraStream = null;
+
+// Work it.
+var worker = work(require('./gif.js'));
+worker.addEventListener('message', function(ev) {
+  userRef.set({
+    id: userID,
+    image: ev.data
+  });
+}, false);
+
+var users = document.getElementById('users');
 
 function addUser(id, image) {
   return `<li id="user${id}" class="user"><img src="${image}" alt="User ${id}" /></li>`;
@@ -32,8 +48,6 @@ function init(user) {
   userID = user.uid;
   userRef = firebase.database().ref('gifs/' + userID);
   userRef.onDisconnect().remove();
-  setInterval(saveGif, 3000);
-  saveGif();
 }
 
 firebase.initializeApp({
@@ -68,7 +82,7 @@ firebase.database().ref('gifs').on('child_removed', function(data) {
   child.parentNode.removeChild(child);
 });
 
-},{"firebase":2,"gifshot":4}],2:[function(require,module,exports){
+},{"./gif.js":1,"firebase":3,"gifshot":5,"webworkify":6}],3:[function(require,module,exports){
 /**
  *  Firebase libraries for browser - npm package.
  *
@@ -79,7 +93,7 @@ firebase.database().ref('gifs').on('child_removed', function(data) {
 require('./firebase');
 module.exports = firebase;
 
-},{"./firebase":3}],3:[function(require,module,exports){
+},{"./firebase":4}],4:[function(require,module,exports){
 (function (global){
 /*! @license Firebase v3.2.1
     Build: 3.2.1-rc.3
@@ -650,7 +664,7 @@ ra.STATE_CHANGED="state_changed";sa.RUNNING="running";sa.PAUSED="paused";sa.SUCC
 (function(){function a(a){return new Y(a)}var b={TaskState:sa,TaskEvent:ra,Storage:Y,Reference:X};if(window.firebase&&firebase.INTERNAL&&firebase.INTERNAL.registerService)firebase.INTERNAL.registerService("storage",a,b);else throw Error("Cannot install Firebase Storage - be sure to load firebase-app.js first.");})();})();
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 /*Copyrights for code authored by Yahoo Inc. is licensed under the following terms:
 MIT License
 Copyright  2015 Yahoo Inc.
@@ -2368,4 +2382,73 @@ API = function (utils, error, defaultOptions, isSupported, isWebCamGIFSupported,
   }
 }(API));
 }(typeof window !== "undefined" ? window : {}, typeof document !== "undefined" ? document : { createElement: function() {} }, typeof window !== "undefined" ? window.navigator : {}));
-},{}]},{},[1]);
+},{}],6:[function(require,module,exports){
+var bundleFn = arguments[3];
+var sources = arguments[4];
+var cache = arguments[5];
+
+var stringify = JSON.stringify;
+
+module.exports = function (fn, options) {
+    var wkey;
+    var cacheKeys = Object.keys(cache);
+
+    for (var i = 0, l = cacheKeys.length; i < l; i++) {
+        var key = cacheKeys[i];
+        var exp = cache[key].exports;
+        // Using babel as a transpiler to use esmodule, the export will always
+        // be an object with the default export as a property of it. To ensure
+        // the existing api and babel esmodule exports are both supported we
+        // check for both
+        if (exp === fn || exp && exp.default === fn) {
+            wkey = key;
+            break;
+        }
+    }
+
+    if (!wkey) {
+        wkey = Math.floor(Math.pow(16, 8) * Math.random()).toString(16);
+        var wcache = {};
+        for (var i = 0, l = cacheKeys.length; i < l; i++) {
+            var key = cacheKeys[i];
+            wcache[key] = key;
+        }
+        sources[wkey] = [
+            Function(['require','module','exports'], '(' + fn + ')(self)'),
+            wcache
+        ];
+    }
+    var skey = Math.floor(Math.pow(16, 8) * Math.random()).toString(16);
+
+    var scache = {}; scache[wkey] = wkey;
+    sources[skey] = [
+        Function(['require'], (
+            // try to call default if defined to also support babel esmodule
+            // exports
+            'var f = require(' + stringify(wkey) + ');' +
+            '(f.default ? f.default : f)(self);'
+        )),
+        scache
+    ];
+
+    var src = '(' + bundleFn + ')({'
+        + Object.keys(sources).map(function (key) {
+            return stringify(key) + ':['
+                + sources[key][0]
+                + ',' + stringify(sources[key][1]) + ']'
+            ;
+        }).join(',')
+        + '},{},[' + stringify(skey) + '])'
+    ;
+
+    var URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+
+    var blob = new Blob([src], { type: 'text/javascript' });
+    if (options && options.bare) { return blob; }
+    var workerUrl = URL.createObjectURL(blob);
+    var worker = new Worker(workerUrl);
+    worker.objectURL = workerUrl;
+    return worker;
+};
+
+},{}]},{},[2]);
