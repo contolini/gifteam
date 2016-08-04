@@ -45,18 +45,21 @@ firebase.auth().onAuthStateChanged(function(user) {
   if (user) init(user);
 });
 
-firebase.database().ref('gifs').on('value', function(data) {
-  var data = data.val();
-  var user;
-  for (var key in data) {
-    user = document.getElementById(key);
-    if (!user) users.innerHTML += addUser(key, data[key].image);
-  }
+firebase.database().ref('gifs').on('child_added', function(data) {
+  data = data.val();
+  var user = document.getElementById(data.id);
+  if (!user) users.innerHTML += addUser(data.id, data.image);
 });
 
 firebase.database().ref('gifs').on('child_changed', function(data) {
-  var data = data.val();
+  data = data.val();
   document.querySelector(`#${data.id} img`).src = data.image;
+});
+
+firebase.database().ref('gifs').on('child_removed', function(data) {
+  data = data.val();
+  var child = document.getElementById(data.id);
+  child.parentNode.removeChild(child);
 });
 
 },{"firebase":2,"gifshot":4}],2:[function(require,module,exports){
