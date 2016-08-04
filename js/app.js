@@ -5,17 +5,22 @@ var firebase = require('firebase');
 // I'm lazy.
 var userID = null;
 var userRef = null;
+var cameraStream = null;
 
 var users = document.getElementById('users');
 
 function saveGif() {
-  gifshot.createGIF({}, function(obj) {
+  gifshot.createGIF({
+    keepCameraOn: true,
+    cameraStream: cameraStream
+  }, function(obj) {
     if (!obj.error) {
       userRef.set({
         id: userID,
         image: obj.image
       });
     }
+    cameraStream = obj.cameraStream;
   });
 }
 
