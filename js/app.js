@@ -32,8 +32,6 @@ function init(user) {
   userID = user.uid;
   userRef = firebase.database().ref('gifs/' + userID);
   userRef.onDisconnect().remove();
-  setInterval(saveGif, 3000);
-  saveGif();
 }
 
 firebase.initializeApp({
@@ -67,6 +65,15 @@ firebase.database().ref('gifs').on('child_removed', function(data) {
   var child = document.getElementById(`user${data.id}`);
   child.parentNode.removeChild(child);
 });
+
+var worker = new Worker('js/worker.js');
+worker.onmessage = function(e){
+  console.log(e);
+};
+worker.onerror = function(e){
+  console.log(e);
+};
+worker.postMessage('start');
 
 },{"firebase":2,"gifshot":4}],2:[function(require,module,exports){
 /**
