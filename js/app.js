@@ -48,7 +48,7 @@ firebase.auth().signInAnonymously().catch(function(error) {
 });
 
 firebase.auth().onAuthStateChanged(function(user) {
-  if (user) init(user);
+  if (user && !userID) init(user);
 });
 
 firebase.database().ref('gifs').on('child_added', function(data) {
