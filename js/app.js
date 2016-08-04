@@ -25,7 +25,7 @@ function saveGif() {
 }
 
 function addUser(id, image) {
-  return `<li id="${id}" class="user"><img src="${image}" alt="User ${id}" /></li>`;
+  return `<li id="user${id}" class="user"><img src="${image}" alt="User ${id}" /></li>`;
 }
 
 function init(user) {
@@ -39,7 +39,7 @@ firebase.initializeApp({
   apiKey: "AIzaSyD2Fj1_eWLFd0c3aiCUIHsSH0m63mUjufY",
   authDomain: "gifteam-afcb4.firebaseapp.com",
   databaseURL: "https://gifteam-afcb4.firebaseio.com",
-  storageBucket: "",
+  storageBucket: ""
 });
 
 firebase.auth().signInAnonymously().catch(function(error) {
@@ -58,12 +58,12 @@ firebase.database().ref('gifs').on('child_added', function(data) {
 
 firebase.database().ref('gifs').on('child_changed', function(data) {
   data = data.val();
-  document.querySelector(`#${data.id} img`).src = data.image;
+  document.querySelector(`#user${data.id} img`).src = data.image;
 });
 
 firebase.database().ref('gifs').on('child_removed', function(data) {
   data = data.val();
-  var child = document.getElementById(data.id);
+  var child = document.getElementById(`user${data.id}`);
   child.parentNode.removeChild(child);
 });
 
