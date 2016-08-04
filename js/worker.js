@@ -1,14 +1,13 @@
 function tick(){
-  console.log('ticking from worker', self.postMessage);
-  self.postMessage(Date.now());
+  postMessage('tick');
 }
 
 var onmessage = function(e){
-  console.log('worker got message', e);
   switch (e.data) {
     case 'start':
-      self.setInterval(tick, 3000);
-      tick();
+      return tick();
+    case 'tick':
+      return setTimeout(tick, 3000);
   //  case 'stop':
   //    return self.clearInterval(interval);
   }

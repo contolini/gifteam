@@ -68,11 +68,10 @@ firebase.database().ref('gifs').on('child_removed', function(data) {
 
 var worker = new Worker('js/worker.js');
 worker.onmessage = function(e){
-  console.log(e);
+  saveGif();
+  worker.postMessage('tick');
 };
-worker.onerror = function(e){
-  console.log(e);
-};
+
 worker.postMessage('start');
 
 },{"firebase":2,"gifshot":4}],2:[function(require,module,exports){
