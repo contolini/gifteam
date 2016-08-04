@@ -32,6 +32,7 @@ function init(user) {
   userRef = firebase.database().ref('gifs/' + userID);
   userRef.onDisconnect().remove();
   setInterval(saveGif, 3000);
+  saveGif();
 }
 
 firebase.initializeApp({
